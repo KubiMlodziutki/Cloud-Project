@@ -58,12 +58,6 @@ def parse_args() -> argparse.Namespace:
         help="Output S3 path for parsed pages. Defaults to s3://<bucket>/bronze/parsed/.",
     )
     parser.add_argument(
-        "--output-format",
-        choices=("parquet", "delta"),
-        default="parquet",
-        help="Output storage format.",
-    )
-    parser.add_argument(
         "--mode",
         choices=("overwrite", "append"),
         default="overwrite",
@@ -140,15 +134,11 @@ def main() -> None:
         raise ValueError(f"No supported documents were parsed from {input_path}")
 
     parsed_df = spark.createDataFrame(parsed_rows, schema=parsed_pages_schema())
-    (
-        parsed_df.write.format(args.output_format)
-        .mode(args.mode)
-        .save(output_path)
-    )
+    parsed_df.write.parquet(output_path, mode=args.mode)
 
     print(
         f"Wrote {parsed_df.count()} parsed page(s) from {input_path} "
-        f"to {output_path} as {args.output_format}."
+        f"to {output_path} as parquet."
     )
 
 
