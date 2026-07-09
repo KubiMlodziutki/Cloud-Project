@@ -1,22 +1,29 @@
 import json
 from collections.abc import Callable, Mapping
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import snowflake.connector
 
-from ekp.embeddings.embedder import EmbeddingModel
 from ekp.storage.snowflake import _validate_identifier, snowflake_connection_options
+
+if TYPE_CHECKING:
+    from ekp.embeddings.embedder import EmbeddingModel
 
 
 class SemanticSearchService:
     def __init__(
         self,
-        embedder: EmbeddingModel | None = None,
+        embedder: "EmbeddingModel | None" = None,
         table_name: str = "document_chunks",
         embedding_dimensions: int = 384,
         connection_factory: Callable[..., Any] | None = None,
     ) -> None:
-        self.embedder = embedder or EmbeddingModel()
+        if embedder is None:
+            from ekp.embeddings.embedder import EmbeddingModel
+
+            embedder = EmbeddingModel()
+
+        self.embedder = embedder
         self.table_name = _validate_identifier(table_name)
         self.embedding_dimensions = embedding_dimensions
         self.connection_factory = connection_factory or snowflake.connector.connect
