@@ -40,3 +40,22 @@ Sources: ...
 - Reranking
 - CI/CD
 - Evaluation dataset
+
+## Local Tests
+Install dependencies once:
+
+```powershell
+python -m pip install -r requirements.txt
+```
+
+Run the local unit tests:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\test-local.ps1
+```
+
+From `cmd.exe`, use:
+
+```bat
+scripts\test-local.cmd
+```
