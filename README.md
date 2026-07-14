@@ -59,3 +59,24 @@ From `cmd.exe`, use:
 ```bat
 scripts\test-local.cmd
 ```
+
+## Complete local pipeline
+
+The local runner reads files directly from `data/sample_docs`, parses and chunks them,
+creates embeddings and performs cosine-similarity search. It does not use AWS,
+Databricks, Spark or Snowflake.
+
+```powershell
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\scripts\run-local.ps1 "How should ransomware incidents be handled?"
+```
+
+The first run downloads the configured Sentence Transformers model. Later runs use
+the local model cache. The default model supports both Polish and English documents.
+To additionally generate a cited answer with a locally running Ollama instance:
+
+```powershell
+ollama pull llama3.1
+.\scripts\run-local.ps1 "How should ransomware incidents be handled?" -Ollama
+```
