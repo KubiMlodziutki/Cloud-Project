@@ -27,7 +27,8 @@ def _build_context(chunks: Iterable[Mapping[str, Any] | Any]) -> str:
     context_parts: list[str] = []
 
     for chunk in chunks:
-        text = str(_get_value(chunk, "chunk_text", "")).strip()
+        chunk_text = _get_value(chunk, "chunk_text", "")
+        text = "" if chunk_text is None else str(chunk_text).strip()
         if not text:
             continue
 

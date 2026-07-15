@@ -39,3 +39,50 @@ def test_build_rag_prompt_handles_empty_context() -> None:
     prompt = build_rag_prompt("What is available?", [])
 
     assert "No context provided." in prompt
+
+
+def test_build_rag_prompt_skips_blank_and_none_chunks_without_numbering_gaps() -> None:
+    prompt = build_rag_prompt(
+        "What is available?",
+        [
+            {"chunk_text": None, "source_uri": "ignored-none.md"},
+            {"chunk_text": "   ", "source_uri": "ignored-blank.md"},
+            {"chunk_text": "Useful context.", "document_id": "doc-123"},
+        ],
+    )
+
+    assert "[1] Source: doc-123" in prompt
+    assert "[2]" not in prompt
+    assert "ignored-none.md" not in prompt
+    assert "ignored-blank.md" not in prompt
+
+
+def test_build_rag_prompt_uses_getattr_defaults_for_partial_objects() -> None:
+    @dataclass
+    class PartialChunk:
+        chunk_text: str
+
+    prompt = build_rag_prompt("What is available?", [PartialChunk("Object context.")])
+
+    assert "[1] Source: unknown source" in prompt
+    assert "chunk:" not in prompt
+    assert "Object context." in prompt
+
+
+def test_build_rag_prompt_prefers_source_uri_over_other_identifiers() -> None:
+    prompt = build_rag_prompt(
+        "What is available?",
+        [
+            {
+                "chunk_text": "Mapped context.",
+                "source_uri": "s3://bucket/source.md",
+                "document_name": "fallback-name.md",
+                "document_id": "fallback-id",
+                "chunk_index": 0,
+            }
+        ],
+    )
+
+    assert "Source: s3://bucket/source.md, chunk: 0" in prompt
+    assert "fallback-name.md" not in prompt
+    assert "fallback-id" not in prompt
