@@ -1,0 +1,4 @@
+bucket_name            = "replace-with-a-globally-unique-bucket-name"
+billing_alert_email    = "you@example.com"
+monthly_budget_usd     = 4
+s3_get_alarm_threshold = 30
