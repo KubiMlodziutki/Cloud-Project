@@ -68,6 +68,7 @@ def insert_document_vectors_from_staging(
     source_table: str = "raw_document_chunks_stg",
     target_table: str = "document_chunks",
     embedding_dimensions: int = 384,
+    truncate: bool = False,
 ) -> None:
     safe_source_table = _validate_identifier(source_table)
     safe_target_table = _validate_identifier(target_table)
@@ -95,6 +96,8 @@ def insert_document_vectors_from_staging(
 
     with snowflake.connector.connect(**snowflake_connection_options()) as connection:
         with connection.cursor() as cursor:
+            if truncate:
+                cursor.execute(f"TRUNCATE TABLE {safe_target_table}")
             cursor.execute(sql)
 
 
