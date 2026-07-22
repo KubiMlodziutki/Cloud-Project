@@ -1,5 +1,4 @@
 import argparse
-import os
 import sys
 import tempfile
 from dataclasses import asdict
@@ -24,38 +23,19 @@ from ekp.parsing.parsers import parse_document  # noqa: E402
 
 
 SUPPORTED_SUFFIXES = {".pdf", ".html", ".htm", ".md", ".markdown"}
-DEFAULT_RAW_PREFIX = "raw/documents/"
-DEFAULT_PARSED_PREFIX = "bronze/parsed/"
-
-
-def build_s3_path(bucket_name: str, prefix: str) -> str:
-    normalized_prefix = prefix.strip("/")
-    return f"s3://{bucket_name}/{normalized_prefix}/"
-
-
-def default_bucket_name() -> str:
-    bucket_name = os.getenv("S3_BUCKET_NAME")
-    if bucket_name:
-        return bucket_name
-
-    from ekp.config import settings
-
-    return settings.s3_bucket_name
-
-
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Parse raw documents from S3 and write parsed pages to bronze."
     )
     parser.add_argument(
         "--input-path",
-        default=None,
-        help="Input S3 path with raw documents. Defaults to s3://<bucket>/raw/documents/.",
+        required=True,
+        help="Input directory, normally a Unity Catalog volume path.",
     )
     parser.add_argument(
         "--output-path",
-        default=None,
-        help="Output S3 path for parsed pages. Defaults to s3://<bucket>/bronze/parsed/.",
+        required=True,
+        help="Output directory, normally a Unity Catalog volume path.",
     )
     parser.add_argument(
         "--mode",
@@ -64,16 +44,6 @@ def parse_args() -> argparse.Namespace:
         help="Spark write mode for the parsed layer.",
     )
     return parser.parse_args()
-
-
-def resolve_paths(args: argparse.Namespace) -> tuple[str, str]:
-    if args.input_path and args.output_path:
-        return args.input_path, args.output_path
-
-    bucket_name = default_bucket_name()
-    input_path = args.input_path or build_s3_path(bucket_name, DEFAULT_RAW_PREFIX)
-    output_path = args.output_path or build_s3_path(bucket_name, DEFAULT_PARSED_PREFIX)
-    return input_path, output_path
 
 
 def parsed_pages_from_binary_files(spark: SparkSession, input_path: str) -> list[dict]:
@@ -125,7 +95,7 @@ def parsed_pages_schema() -> StructType:
 
 def main() -> None:
     args = parse_args()
-    input_path, output_path = resolve_paths(args)
+    input_path, output_path = args.input_path, args.output_path
 
     spark = SparkSession.builder.appName("ekp-parse-documents").getOrCreate()
     parsed_rows = parsed_pages_from_binary_files(spark, input_path)

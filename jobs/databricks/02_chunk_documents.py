@@ -1,5 +1,4 @@
 import argparse
-import os
 import sys
 from dataclasses import asdict
 from datetime import datetime, timezone
@@ -22,38 +21,19 @@ add_project_src_to_path()
 from ekp.processing.chunking import chunk_text  # noqa: E402
 
 
-DEFAULT_PARSED_PREFIX = "bronze/parsed/"
-DEFAULT_CHUNKS_PREFIX = "silver/chunks/"
-
-
-def build_s3_path(bucket_name: str, prefix: str) -> str:
-    normalized_prefix = prefix.strip("/")
-    return f"s3://{bucket_name}/{normalized_prefix}/"
-
-
-def default_bucket_name() -> str:
-    bucket_name = os.getenv("S3_BUCKET_NAME")
-    if bucket_name:
-        return bucket_name
-
-    from ekp.config import settings
-
-    return settings.s3_bucket_name
-
-
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Chunk parsed document pages from bronze and write chunks to silver."
     )
     parser.add_argument(
         "--input-path",
-        default=None,
-        help="Input S3 path with parsed pages. Defaults to s3://<bucket>/bronze/parsed/.",
+        required=True,
+        help="Input parsed-pages directory.",
     )
     parser.add_argument(
         "--output-path",
-        default=None,
-        help="Output S3 path for chunks. Defaults to s3://<bucket>/silver/chunks/.",
+        required=True,
+        help="Output chunks directory.",
     )
     parser.add_argument(
         "--chunk-size",
@@ -74,16 +54,6 @@ def parse_args() -> argparse.Namespace:
         help="Spark write mode for the chunks layer.",
     )
     return parser.parse_args()
-
-
-def resolve_paths(args: argparse.Namespace) -> tuple[str, str]:
-    if args.input_path and args.output_path:
-        return args.input_path, args.output_path
-
-    bucket_name = default_bucket_name()
-    input_path = args.input_path or build_s3_path(bucket_name, DEFAULT_PARSED_PREFIX)
-    output_path = args.output_path or build_s3_path(bucket_name, DEFAULT_CHUNKS_PREFIX)
-    return input_path, output_path
 
 
 def chunks_schema() -> StructType:
@@ -132,7 +102,7 @@ def chunk_rows_from_parsed_pages(
 
 def main() -> None:
     args = parse_args()
-    input_path, output_path = resolve_paths(args)
+    input_path, output_path = args.input_path, args.output_path
 
     spark = SparkSession.builder.appName("ekp-chunk-documents").getOrCreate()
     chunk_rows = chunk_rows_from_parsed_pages(

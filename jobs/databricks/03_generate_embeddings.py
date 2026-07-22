@@ -1,5 +1,4 @@
 import argparse
-import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -28,38 +27,24 @@ add_project_src_to_path()
 from ekp.embeddings.embedder import EmbeddingModel  # noqa: E402
 
 
-DEFAULT_CHUNKS_PREFIX = "silver/chunks/"
-DEFAULT_EMBEDDINGS_PREFIX = "gold/embeddings/"
-
-
-def build_s3_path(bucket_name: str, prefix: str) -> str:
-    normalized_prefix = prefix.strip("/")
-    return f"s3://{bucket_name}/{normalized_prefix}/"
-
-
-def default_bucket_name() -> str:
-    bucket_name = os.getenv("S3_BUCKET_NAME")
-    if bucket_name:
-        return bucket_name
-
-    from ekp.config import settings
-
-    return settings.s3_bucket_name
-
-
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Generate embeddings for silver chunks and write gold parquet."
     )
     parser.add_argument(
         "--input-path",
-        default=None,
-        help="Input S3 path with chunks. Defaults to s3://<bucket>/silver/chunks/.",
+        required=True,
+        help="Input chunks directory.",
     )
     parser.add_argument(
         "--output-path",
+        required=True,
+        help="Output embeddings directory.",
+    )
+    parser.add_argument(
+        "--model",
         default=None,
-        help="Output S3 path for embeddings. Defaults to s3://<bucket>/gold/embeddings/.",
+        help="Sentence Transformers model name.",
     )
     parser.add_argument(
         "--batch-size",
@@ -74,16 +59,6 @@ def parse_args() -> argparse.Namespace:
         help="Spark write mode for the embeddings layer.",
     )
     return parser.parse_args()
-
-
-def resolve_paths(args: argparse.Namespace) -> tuple[str, str]:
-    if args.input_path and args.output_path:
-        return args.input_path, args.output_path
-
-    bucket_name = default_bucket_name()
-    input_path = args.input_path or build_s3_path(bucket_name, DEFAULT_CHUNKS_PREFIX)
-    output_path = args.output_path or build_s3_path(bucket_name, DEFAULT_EMBEDDINGS_PREFIX)
-    return input_path, output_path
 
 
 def embeddings_schema() -> StructType:
@@ -114,12 +89,13 @@ def embedding_rows_from_chunks(
     spark: SparkSession,
     input_path: str,
     batch_size: int,
+    model_name: str | None = None,
 ) -> list[dict]:
     chunk_rows = [row.asDict() for row in spark.read.parquet(input_path).collect()]
     if not chunk_rows:
         return []
 
-    model = EmbeddingModel()
+    model = EmbeddingModel(model_name=model_name)
     embedded_at = datetime.now(timezone.utc).isoformat()
     output_rows: list[dict] = []
 
@@ -137,13 +113,14 @@ def embedding_rows_from_chunks(
 
 def main() -> None:
     args = parse_args()
-    input_path, output_path = resolve_paths(args)
+    input_path, output_path = args.input_path, args.output_path
 
     spark = SparkSession.builder.appName("ekp-generate-embeddings").getOrCreate()
     embedding_rows = embedding_rows_from_chunks(
         spark=spark,
         input_path=input_path,
         batch_size=args.batch_size,
+        model_name=args.model,
     )
 
     if not embedding_rows:
