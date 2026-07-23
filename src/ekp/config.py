@@ -3,7 +3,7 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     aws_region: str = "eu-central-1"
-    s3_bucket_name: str
+    s3_bucket_name: str = "unused-for-free-edition"
 
     snowflake_account: str
     snowflake_user: str
