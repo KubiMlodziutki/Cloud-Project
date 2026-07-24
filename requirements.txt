@@ -1,5 +1,6 @@
 boto3
 pandas
+pyarrow
 pydantic
 pydantic-settings
 python-dotenv
