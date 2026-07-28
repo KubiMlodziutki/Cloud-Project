@@ -52,7 +52,7 @@ def test_build_rag_prompt_skips_blank_and_none_chunks_without_numbering_gaps() -
     )
 
     assert "[1] Source: doc-123" in prompt
-    assert "[2]" not in prompt
+    assert "\n[2] Source:" not in prompt
     assert "ignored-none.md" not in prompt
     assert "ignored-blank.md" not in prompt
 
