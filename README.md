@@ -47,7 +47,7 @@ $env:TF_VAR_snowflake_role = "ACCOUNTADMIN"
 
 terraform -chdir=terraform/snowflake init
 terraform -chdir=terraform/snowflake validate
-terraform -chdir=terraform/snowflake plan -out=snowflake.tfplan
+terraform -chdir=terraform/snowflake plan -out snowflake.tfplan
 terraform -chdir=terraform/snowflake apply snowflake.tfplan
 ```
 
@@ -87,7 +87,7 @@ Deploy the managed volume, source files, sample PDF, and three-task serverless j
 ```powershell
 terraform -chdir=terraform/databricks init
 terraform -chdir=terraform/databricks validate
-terraform -chdir=terraform/databricks plan -out=databricks.tfplan
+terraform -chdir=terraform/databricks plan -out databricks.tfplan
 terraform -chdir=terraform/databricks apply databricks.tfplan
 ```
 
