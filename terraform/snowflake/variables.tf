@@ -1,5 +1,10 @@
-variable "snowflake_account" {
-  description = "Snowflake account identifier (for example orgname-account_name)."
+variable "snowflake_organization_name" {
+  description = "Snowflake organization name returned by CURRENT_ORGANIZATION_NAME()."
+  type        = string
+}
+
+variable "snowflake_account_name" {
+  description = "Snowflake account name returned by CURRENT_ACCOUNT_NAME(); do not include the organization or hostname."
   type        = string
 }
 
@@ -24,6 +29,39 @@ variable "warehouse_name" {
   description = "Name of the EKP warehouse."
   type        = string
   default     = "EKP_WH"
+}
+
+variable "warehouse_monthly_credit_quota" {
+  description = "Monthly Snowflake credit quota for the EKP warehouse."
+  type        = number
+  default     = 1
+
+  validation {
+    condition     = var.warehouse_monthly_credit_quota > 0
+    error_message = "warehouse_monthly_credit_quota must be greater than zero."
+  }
+}
+
+variable "warehouse_credit_notify_triggers" {
+  description = "Percentages of the monthly warehouse credit quota that send Snowflake notifications."
+  type        = set(number)
+  default     = [50, 80]
+
+  validation {
+    condition     = alltrue([for threshold in var.warehouse_credit_notify_triggers : threshold > 0 && threshold < 90])
+    error_message = "Every warehouse credit notification threshold must be greater than 0 and lower than 90."
+  }
+}
+
+variable "warehouse_credit_suspend_immediate_trigger" {
+  description = "Percentage of the monthly credit quota that immediately suspends the warehouse and cancels active statements."
+  type        = number
+  default     = 90
+
+  validation {
+    condition     = var.warehouse_credit_suspend_immediate_trigger > 0 && var.warehouse_credit_suspend_immediate_trigger <= 100
+    error_message = "warehouse_credit_suspend_immediate_trigger must be between 1 and 100."
+  }
 }
 
 variable "database_name" {

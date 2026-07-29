@@ -49,3 +49,23 @@ resource "snowflake_grant_privileges_to_account_role" "future_tables" {
     }
   }
 }
+
+resource "snowflake_grant_privileges_to_account_role" "staging_table" {
+  account_role_name = snowflake_account_role.ekp.name
+  privileges        = ["SELECT", "INSERT", "TRUNCATE"]
+
+  on_schema_object {
+    object_type = "TABLE"
+    object_name = snowflake_table.raw_document_chunks_stg.fully_qualified_name
+  }
+}
+
+resource "snowflake_grant_privileges_to_account_role" "document_chunks_table" {
+  account_role_name = snowflake_account_role.ekp.name
+  privileges        = ["SELECT", "INSERT", "TRUNCATE"]
+
+  on_schema_object {
+    object_type = "TABLE"
+    object_name = snowflake_table.document_chunks.fully_qualified_name
+  }
+}

@@ -39,7 +39,8 @@ local transfer. Supply Terraform credentials as environment variables so the
 password is not committed:
 
 ```powershell
-$env:TF_VAR_snowflake_account = "organization-account"
+$env:TF_VAR_snowflake_organization_name = "organization"
+$env:TF_VAR_snowflake_account_name = "account"
 $env:TF_VAR_snowflake_user = "terraform-user"
 $env:TF_VAR_snowflake_password = Read-Host "Snowflake password"
 $env:TF_VAR_snowflake_role = "ACCOUNTADMIN"
